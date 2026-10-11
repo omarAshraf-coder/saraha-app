@@ -1,58 +1,51 @@
-const express = require('express');
-const mongoose = require('mongoose');
+import express from "express";
+import { saveOTP, getOTP, deleteOTP } from "./redis.js";
+import { sendEmail } from "./sendEmail.js";
 
 const app = express();
-const port = 3000;
-
-// Middleware to parse JSON data
 app.use(express.json());
 
-// Connect to MongoDB Atlas with timeout and IPv4 settings
-mongoose.connect('mongodb+srv://portalrumble123_db_user:753699@cluster0.hfqtkqe.mongodb.net/?appName=Cluster0', {
-    family: 4,
-    serverSelectionTimeoutMS: 30000
-})
-.then(() => {
-    console.log('Database connected successfully 🚀');
-})
-.catch((err) => {
-    console.log('Database connection failed X', err.message);
+app.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await saveOTP(email, otp);
+
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Code for Saraha App",
+      html: `<h2>Your OTP Code is: <span style="color: blue;">${otp}</span></h2><p>This code expires in 5 minutes.</p>`,
+    });
+
+    res.status(200).json({ message: "OTP sent successfully to your email!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// User Schema & Model
-const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-}, { timestamps: true });
+app.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
 
-const User = mongoose.model('User', userSchema);
+    const savedOTP = await getOTP(email);
 
-// Signup Endpoint
-app.post('/signup', async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email: email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email already exists ⚠' });
-        }
-
-        // Create new user
-        const newUser = new User({ name, email, password });
-        await newUser.save();
-
-        res.status(201).json({ message: 'User registered successfully ✨', user: newUser });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error X', error: error.message });
+    if (!savedOTP) {
+      return res.status(400).json({ message: "OTP expired or invalid!" });
     }
+
+    if (savedOTP !== otp) {
+      return res.status(400).json({ message: "Incorrect OTP code!" });
+    }
+
+    await deleteOTP(email);
+
+    res.status(200).json({ message: "OTP verified successfully!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.get('/', (req, res) => {
-    res.send('Hello from Saraha App Server!');
-});
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port} 🚀`);
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
 });
