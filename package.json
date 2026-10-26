@@ -1,0 +1,9 @@
+{
+  "name": "saraha-app",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^5.3.0",
+    "mongoose": "^9.11.4"
+  }
+}
