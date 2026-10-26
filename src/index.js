@@ -1,18 +1,15 @@
 import express from 'express';
 import { connectDB } from './database/connection.js';
+import userRouter from './modules/user/user.router.js';
 
 const app = express();
 const port = 3000;
 
-// Middleware to parse JSON
 app.use(express.json());
 
-// Connect to Database
-connectDB();
+app.use('/auth', userRouter);
 
-app.get('/', (req, res) => {
-  res.send('Hello in Saraha App Backend!');
-});
+connectDB();
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port} !`);
