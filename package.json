@@ -6,6 +6,7 @@
     "bcrypt": "^6.0.0",
     "express": "^5.3.0",
     "ioredis": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.4",
     "nodemailer": "^10.2.1"
   }
